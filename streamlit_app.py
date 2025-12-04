@@ -8,7 +8,11 @@ import streamlit as st
 import joblib
 import numpy as np
 import os
+import warnings
 from pathlib import Path
+
+# Suppress scikit-learn version warnings (models work fine across versions)
+warnings.filterwarnings('ignore', category=UserWarning, module='sklearn')
 
 # Page configuration
 st.set_page_config(
@@ -219,23 +223,48 @@ if predict_button:
             'Property_Area': property_area
         }
         
+        # Debug: Check for missing features (only show if there are issues)
+        missing_features = [f for f in feature_names if f not in feature_dict]
+        if missing_features:
+            st.warning(f"⚠️ Model expects features not in form: {missing_features}")
+            st.info(f"📋 Model feature names: {list(feature_names)}")
+            st.info(f"📋 Form feature names: {list(feature_dict.keys())}")
+        
         # Create feature array in correct order
         features = []
         for feature_name in feature_names:
-            value = feature_dict.get(feature_name, '')
+            value = feature_dict.get(feature_name, None)
+            
+            # Handle missing features
+            if value is None or value == '':
+                # Provide default values based on feature type
+                if feature_name in encoders:
+                    # For categorical features, use first class as default
+                    encoded_value = encoders[feature_name].transform([encoders[feature_name].classes_[0]])[0]
+                    features.append(encoded_value)
+                else:
+                    # For numerical features, use 0 as default
+                    st.warning(f"⚠️ Missing value for feature '{feature_name}', using default value 0")
+                    features.append(0.0)
+                continue
             
             # Encode categorical features
             if feature_name in encoders:
                 try:
                     encoded_value = encoders[feature_name].transform([str(value)])[0]
                     features.append(encoded_value)
-                except ValueError:
+                except (ValueError, KeyError) as e:
                     # If value not in encoder, use first class
+                    st.warning(f"⚠️ Unknown value '{value}' for feature '{feature_name}', using default")
                     encoded_value = encoders[feature_name].transform([encoders[feature_name].classes_[0]])[0]
                     features.append(encoded_value)
             else:
-                # Numerical feature
-                features.append(float(value))
+                # Numerical feature - handle conversion safely
+                try:
+                    features.append(float(value))
+                except (ValueError, TypeError) as e:
+                    st.error(f"❌ Invalid value '{value}' for numerical feature '{feature_name}': {str(e)}")
+                    features.append(0.0)
         
         # Convert to numpy array and reshape
         features_array = np.array(features).reshape(1, -1)
