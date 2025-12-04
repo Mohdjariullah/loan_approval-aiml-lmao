@@ -173,34 +173,32 @@ st.header("📝 Applicant Information")
 st.markdown("Please enter the applicant's information and financial details:")
 
 # Create columns for better layout
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     st.subheader("Personal Information")
-    gender = st.selectbox("Gender", options=["Male", "Female"])
-    married = st.selectbox("Married", options=["Yes", "No"])
-    dependents = st.selectbox("Dependents", options=["0", "1", "2", "3+"])
-    education = st.selectbox("Education", options=["Graduate", "Not Graduate"])
-    self_employed = st.selectbox("Self Employed", options=["Yes", "No"])
-    property_area = st.selectbox("Property Area", options=["Urban", "Semiurban", "Rural"])
+    person_age = st.number_input("Age", min_value=18, max_value=100, value=25, step=1)
+    person_gender = st.selectbox("Gender", options=["male", "female"])
+    person_education = st.selectbox("Education", options=["High School", "Associate", "Bachelor", "Master"])
+    person_home_ownership = st.selectbox("Home Ownership", options=["RENT", "OWN", "MORTGAGE", "OTHER"])
+    person_emp_exp = st.number_input("Employment Experience (years)", min_value=0, max_value=50, value=0, step=1)
 
 with col2:
     st.subheader("Financial Information")
-    applicant_income = st.number_input("Applicant Income (₹)", min_value=0, value=5000, step=100)
-    coapplicant_income = st.number_input("Coapplicant Income (₹)", min_value=0, value=0, step=100)
-    loan_amount = st.number_input("Loan Amount (₹)", min_value=0, value=50000, step=1000)
-    loan_amount_term = st.selectbox(
-        "Loan Amount Term (months)", 
-        options=[12, 36, 60, 84, 120, 180, 240, 300, 360]
-    )
-    credit_history = st.selectbox(
-        "Credit History", 
-        options=["Good (1)", "Not Good (0)"],
-        format_func=lambda x: x
-    )
+    person_income = st.number_input("Annual Income ($)", min_value=0, value=50000, step=1000)
+    loan_amnt = st.number_input("Loan Amount ($)", min_value=0, value=10000, step=1000)
+    loan_int_rate = st.number_input("Loan Interest Rate (%)", min_value=0.0, max_value=30.0, value=10.0, step=0.1, format="%.2f")
+    loan_percent_income = st.number_input("Loan Percent of Income", min_value=0.0, max_value=1.0, value=0.3, step=0.01, format="%.2f", help="Loan amount as percentage of annual income")
+    credit_score = st.number_input("Credit Score", min_value=300, max_value=850, value=650, step=1)
 
-# Convert credit history
-credit_history_value = 1 if credit_history == "Good (1)" else 0
+with col3:
+    st.subheader("Loan Details")
+    loan_intent = st.selectbox(
+        "Loan Intent", 
+        options=["PERSONAL", "EDUCATION", "MEDICAL", "VENTURE", "HOMEIMPROVEMENT", "DEBTCONSOLIDATION"]
+    )
+    cb_person_cred_hist_length = st.number_input("Credit History Length (years)", min_value=0.0, max_value=50.0, value=3.0, step=0.5, format="%.1f")
+    previous_loan_defaults_on_file = st.selectbox("Previous Loan Defaults", options=["No", "Yes"])
 
 # Prediction button
 st.markdown("---")
@@ -208,19 +206,21 @@ predict_button = st.button("🔍 Predict Loan Approval", type="primary", use_con
 
 if predict_button:
     try:
-        # Prepare features dictionary
+        # Prepare features dictionary matching the model's expected feature names
         feature_dict = {
-            'Gender': gender,
-            'Married': married,
-            'Dependents': dependents,
-            'Education': education,
-            'Self_Employed': self_employed,
-            'ApplicantIncome': applicant_income,
-            'CoapplicantIncome': coapplicant_income,
-            'LoanAmount': loan_amount,
-            'Loan_Amount_Term': loan_amount_term,
-            'Credit_History': credit_history_value,
-            'Property_Area': property_area
+            'person_age': float(person_age),
+            'person_gender': person_gender,
+            'person_education': person_education,
+            'person_income': float(person_income),
+            'person_emp_exp': float(person_emp_exp),
+            'person_home_ownership': person_home_ownership,
+            'loan_amnt': float(loan_amnt),
+            'loan_intent': loan_intent,
+            'loan_int_rate': float(loan_int_rate),
+            'loan_percent_income': float(loan_percent_income),
+            'cb_person_cred_hist_length': float(cb_person_cred_hist_length),
+            'credit_score': float(credit_score),
+            'previous_loan_defaults_on_file': previous_loan_defaults_on_file
         }
         
         # Debug: Check for missing features (only show if there are issues)
@@ -326,10 +326,10 @@ if predict_button:
             st.json(feature_dict)
         
         # Calculate and display loan-to-income ratio
-        total_income = applicant_income + coapplicant_income
-        if total_income > 0:
-            loan_to_income_ratio = (loan_amount / total_income) * 100
+        if person_income > 0:
+            loan_to_income_ratio = (loan_amnt / person_income) * 100
             st.info(f"💡 **Loan-to-Income Ratio:** {loan_to_income_ratio:.2f}%")
+            st.info(f"💡 **Loan Percent of Income:** {loan_percent_income * 100:.2f}%")
     
     except Exception as e:
         st.error(f"❌ An error occurred during prediction: {str(e)}")
