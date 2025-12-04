@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result - Loan Approval</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Loan Approval Result</h1>
+        </header>
+
+        <main>
+            <div class="result-container">
+                <div class="result-card {{ 'loan-approved' if result.prediction == 1 else 'loan-rejected' }}">
+                    <div class="result-icon">
+                        {% if result.prediction == 1 %}
+                            ✅
+                        {% else %}
+                            ❌
+                        {% endif %}
+                    </div>
+                    <h2 class="result-title">{{ result.prediction_text }}</h2>
+                    <div class="confidence">
+                        <p>Confidence: <strong>{{ result.confidence }}%</strong></p>
+                    </div>
+                </div>
+
+                <div class="probability-section">
+                    <h3>Prediction Probabilities</h3>
+                    <div class="probability-bars">
+                        <div class="probability-item">
+                            <div class="prob-label">
+                                <span>Not Approved</span>
+                                <span class="prob-value">{{ result.probabilities.not_approved }}%</span>
+                            </div>
+                            <div class="prob-bar">
+                                <div class="prob-fill rejected-fill" style="width: {{ result.probabilities.not_approved }}%"></div>
+                            </div>
+                        </div>
+                        <div class="probability-item">
+                            <div class="prob-label">
+                                <span>Approved</span>
+                                <span class="prob-value">{{ result.probabilities.approved }}%</span>
+                            </div>
+                            <div class="prob-bar">
+                                <div class="prob-fill approved-fill" style="width: {{ result.probabilities.approved }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <a href="/" class="btn btn-primary">Make Another Prediction</a>
+                </div>
+
+                <div class="disclaimer">
+                    <p><strong>Disclaimer:</strong> This prediction is for demonstration purposes only. Actual loan approval decisions are made by financial institutions based on comprehensive evaluation and regulatory requirements.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
+
